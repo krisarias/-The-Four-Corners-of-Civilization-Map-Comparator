@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Comparador de Mapas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="main-content">
+    <div class="map-container">
+      <img id="anniversary" src="anniversary.png" alt="Mapa 1" style="opacity: 0.5;">
+      <img id="interactive" src="interactive.png" alt="Mapa 2" style="opacity: 0.5;">
+      <img id="standard" src="standard.png" alt="Mapa 3" style="opacity: 0.5;">
+      <img id="worldbuilders" src="worldbuilders.png" alt="Mapa 4" style="opacity: 0.5;">
+    </div>
+
+    <div class="right-column">
+      <h2>"The Four Corners of Civilization" Map Comparator</h2>
+      <div class="controls">
+        <label for="slider1">Interactive:</label>
+        <input type="range" min="0" max="95" value="25" id="slider1">
+
+        <label for="slider2">Standard:</label>
+        <input type="range" min="0" max="95" value="25" id="slider2">
+
+        <label for="slider3">Anniversary:</label>
+        <input type="range" min="0" max="95" value="25" id="slider3">
+
+        <label for="slider4">Worldbuilders:</label>
+        <input type="range" min="0" max="95" value="25" id="slider4">
+      </div>
+      
+      <div class="text-box">
+        <h3>Map Information</h3>
+        <p>Use the sliders above to adjust the opacity of each map layer. This lets you compare the different versions and see how they overlap.</p>
+        <p>These are the four main versions of the map:<br>
+          <strong>Interactive:</strong> from Pat's official website and the first editions of <em>NotW</em>.<br>
+          <strong>Standard:</strong> the most common version included in the books.<br>
+          <strong>Anniversary:</strong> from the 10th-anniversary special edition.<br>
+          <strong>Worldbuilders:</strong> from the poster sold by Worldbuilders.<br>
+          You can buy the Worldbuilders map <a href="https://worldbuildersmarket.com/products/anniversary-edition-four-corners-of-civilization-map" target="_blank" style="color:#1c1812;">here</a>.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const sliders = [
+      { slider: document.getElementById("slider1"), img: document.getElementById("interactive") },
+      { slider: document.getElementById("slider2"), img: document.getElementById("standard") },
+      { slider: document.getElementById("slider3"), img: document.getElementById("anniversary") },
+      { slider: document.getElementById("slider4"), img: document.getElementById("worldbuilders") }
+    ];
+
+    sliders.forEach(({ slider, img }) => {
+      slider.addEventListener("input", () => {
+        img.style.opacity = slider.value / 100;
+      });
+    });
+  </script>
+</body>
+</html>
+
