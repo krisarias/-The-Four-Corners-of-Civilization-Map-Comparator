@@ -8,7 +8,7 @@ Users can adjust the opacity of each map layer using sliders to see how the maps
 - **Standard:** The most common version included in the books.  
 - **Anniversary:** From the 10th-anniversary special edition of *NotW* by Nate Taylor.  
 - **Worldbuilders:** From the poster sold by Worldbuilders.  
-[Buy the Worldbuilders map here](https://worldbuildersmarket.com/products/anniversary-edition-four-corners-of-civilization-map).
+[Available here](https://worldbuildersmarket.com/products/anniversary-edition-four-corners-of-civilization-map).
 
 ## How to Use
 1. Open `main.html` in a web browser.  
@@ -17,4 +17,5 @@ Users can adjust the opacity of each map layer using sliders to see how the maps
 
 ## Credits
 - Maps from Patrick Rothfuss' *The Kingkiller Chronicle* books and official merch.
-- [Illustrator Nate Taylor] (https://www.instagram.com/natentaylor/?hl=es).
+- Illustrator of the 10th Anniversary Edition map: [Nate Taylor](https://www.instagram.com/natentaylor/)  
+  More of his work at [natentaylor.com](https://natentaylor.com/)
