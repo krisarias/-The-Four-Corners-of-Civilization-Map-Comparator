@@ -12,10 +12,12 @@
 <body>
   <div class="main-content">
     <div class="map-container">
-      <img id="anniversary" src="anniversary.png" alt="Mapa 1" style="opacity: 0.5;">
-      <img id="interactive" src="interactive.png" alt="Mapa 2" style="opacity: 0.5;">
-      <img id="standard" src="standard.png" alt="Mapa 3" style="opacity: 0.5;">
-      <img id="worldbuilders" src="worldbuilders.png" alt="Mapa 4" style="opacity: 0.5;">
+      <div class="map-inner">
+        <img id="anniversary" src="anniversary.png" alt="Mapa 1" style="opacity: 0.5;">
+        <img id="interactive" src="interactive.png" alt="Mapa 2" style="opacity: 0.5;">
+        <img id="standard" src="standard.png" alt="Mapa 3" style="opacity: 0.5;">
+        <img id="worldbuilders" src="worldbuilders.png" alt="Mapa 4" style="opacity: 0.5;">
+      </div>
     </div>
 
     <div class="right-column">
@@ -33,6 +35,23 @@
         <label for="slider4">Worldbuilders:</label>
         <input type="range" min="0" max="95" value="25" id="slider4">
       </div>
+      <div class="controls" style="margin-top:8px;">
+        <label for="scrollZoomToggle">Scroll zoom:</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="checkbox" id="scrollZoomToggle">
+          <label for="touchToggle" style="margin-left:8px;">Touch zoom</label>
+          <input type="checkbox" id="touchToggle">
+          <button id="resetButton" style="padding:6px 10px;border-radius:5px;border:1px solid #6b5d47;background:#d4c4a8;cursor:pointer;">Reset</button>
+        </div>
+      </div>
+      <div class="controls" style="margin-top:12px;">
+        <label for="magnifierToggle">Magnifier:</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="checkbox" id="magnifierToggle">
+          <label for="magnifierZoom" style="margin:0 6px 0 0;">Zoom</label>
+          <input type="range" id="magnifierZoom" min="1.5" max="4" step="0.1" value="2">
+        </div>
+      </div>
       
       <div class="text-box">
         <h3>Map Information</h3>
@@ -40,7 +59,7 @@
         <p>These are the four main versions of the map:<br>
           <strong>Interactive:</strong> from Pat's official <a href="https://www.patrickrothfuss.com/content/world.html" target="_blank" style="color:#1c1812;">website</a> and the first editions of <em>NotW</em>.<br>
           <strong>Standard:</strong> the most common version included in the books.<br>
-          <strong>Anniversary:</strong> from the 10th-anniversary special edition. Credit to illustrator<a href="https://natentaylor.com/" target="_blank" style="color:#1c1812;">Nate Taylor</a><br>
+          <strong>Anniversary:</strong> from the 10th-anniversary special edition. Credit to illustrator<a href="https://natentaylor.com/" target="_blank" style="color:#1c1812;"> Nate Taylor</a><br>
           <strong>Worldbuilders:</strong> from the poster sold by Worldbuilders.<br>
           You can buy it <a href="https://worldbuildersmarket.com/products/anniversary-edition-four-corners-of-civilization-map" target="_blank" style="color:#1c1812;">here</a>.
         </p>
@@ -60,6 +79,306 @@
       slider.addEventListener("input", () => {
         img.style.opacity = slider.value / 100;
       });
+    });
+
+  // Magnifier implementation
+  const mapContainer = document.querySelector('.map-container');
+  const mapInner = mapContainer.querySelector('.map-inner');
+    const magnifierToggle = document.getElementById('magnifierToggle');
+    const magnifierZoom = document.getElementById('magnifierZoom');
+
+    // Create lens element
+    const lens = document.createElement('div');
+    lens.className = 'magnifier-lens';
+    const lensContent = document.createElement('div');
+    lensContent.className = 'lens-content';
+    lens.appendChild(lensContent);
+    mapContainer.appendChild(lens);
+
+  // Clone images into the lens so the composite is visible
+    const imgIds = ['interactive','standard','anniversary','worldbuilders'];
+    const lensImgs = {};
+    imgIds.forEach(id => {
+      const srcImg = document.getElementById(id);
+      const clone = document.createElement('img');
+      clone.src = srcImg.src;
+      clone.alt = srcImg.alt;
+      clone.style.opacity = srcImg.style.opacity || window.getComputedStyle(srcImg).opacity;
+      lensContent.appendChild(clone);
+      lensImgs[id] = clone;
+    });
+
+    // Keep opacities in sync
+    sliders.forEach(({ slider, img }) => {
+      slider.addEventListener('input', () => {
+        const clone = lensImgs[img.id];
+        if (clone) clone.style.opacity = img.style.opacity;
+      });
+    });
+
+    // Default lens hidden
+    lens.style.display = 'none';
+
+    // track current map scale (controlled by scroll when enabled)
+    let mapScale = 1;
+    const minMapScale = 0.5;
+    const maxMapScale = 3;
+    // translation (pan) in unscaled (original) pixels
+    let tx = 0, ty = 0;
+    let isDragging = false;
+    let lastMouse = { x: 0, y: 0 };
+    // base (original/unscaled) size — compute from bounding rect and divide by current scale
+    function getBaseSize() {
+      const rect = mapInner.getBoundingClientRect();
+      return { w: rect.width / mapScale, h: rect.height / mapScale };
+    }
+
+    function updateLensSizeAndContent() {
+      const zoom = parseFloat(magnifierZoom.value);
+      const base = getBaseSize();
+      const originalW = base.w;
+      const originalH = base.h;
+      // Size of lens (px)
+      const lensSize = Math.max(120, Math.min(360, 200));
+      lens.style.width = lens.style.height = lensSize + 'px';
+      // Make the lens content a zoomed version of the original (unscaled) content
+      lensContent.style.width = (originalW * zoom) + 'px';
+      lensContent.style.height = (originalH * zoom) + 'px';
+      // Ensure inner images fill the zoomed content
+      Array.from(lensContent.children).forEach(img => {
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.objectFit = 'cover';
+        img.style.position = 'absolute';
+        img.style.top = '0';
+        img.style.left = '0';
+      });
+    }
+
+    // Handle mouse movement to position the lens
+    function onMouseMove(e) {
+      const rect = mapContainer.getBoundingClientRect();
+      const zoom = parseFloat(magnifierZoom.value);
+      const lensSize = parseFloat(getComputedStyle(lens).width);
+      const x = e.clientX - rect.left; // x in rendered (screen) px
+      const y = e.clientY - rect.top;
+      // handle dragging for pan when zoomed
+      if (isDragging) {
+        const dx = e.clientX - lastMouse.x;
+        const dy = e.clientY - lastMouse.y;
+        // convert screen delta to unscaled translation delta
+        tx += dx / mapScale;
+        ty += dy / mapScale;
+        clampTranslation();
+        applyTransform();
+        lastMouse = { x: e.clientX, y: e.clientY };
+      }
+      if (!magnifierToggle.checked) return;
+      // Position lens centered on cursor within rendered container
+      const left = Math.max(0, Math.min(rect.width - lensSize, x - lensSize/2));
+      const top = Math.max(0, Math.min(rect.height - lensSize, y - lensSize/2));
+      lens.style.left = left + 'px';
+      lens.style.top = top + 'px';
+      // Convert rendered coordinate to original (unscaled) image coordinate,
+      // accounting for translation tx/ty: screenX = (sourceX + tx) * mapScale
+      const sourceX = x / mapScale - tx;
+      const sourceY = y / mapScale - ty;
+      // Position lensContent to show zoomed point under cursor
+      const contentLeft = -sourceX * zoom + lensSize/2;
+      const contentTop = -sourceY * zoom + lensSize/2;
+      lensContent.style.left = contentLeft + 'px';
+      lensContent.style.top = contentTop + 'px';
+    }
+
+    function clampTranslation() {
+      const base = getBaseSize();
+      const scaledW = base.w * mapScale;
+      const scaledH = base.h * mapScale;
+      const cw = mapContainer.clientWidth;
+      const ch = mapContainer.clientHeight;
+      // allowed tx/ty ranges so the image covers the container
+      // add a small visual overscroll buffer so users can pan to the edges comfortably
+      const overscrollPixels = 40; // visual pixels allowed beyond strict bounds
+      const overscrollUnscaled = overscrollPixels / mapScale;
+      const minTx = Math.min(0, cw / mapScale - base.w) - overscrollUnscaled;
+      const maxTx = 0 + overscrollUnscaled;
+      const minTy = Math.min(0, ch / mapScale - base.h) - overscrollUnscaled;
+      const maxTy = 0 + overscrollUnscaled;
+      tx = Math.max(minTx, Math.min(maxTx, tx));
+      ty = Math.max(minTy, Math.min(maxTy, ty));
+    }
+
+    function applyTransform() {
+      // Multiply translation by mapScale so unscaled tx/ty map to the correct screen offset
+      mapInner.style.transform = `translate(${tx * mapScale}px, ${ty * mapScale}px) scale(${mapScale})`;
+      mapInner.style.transformOrigin = '0 0';
+    }
+
+    // Toggle behavior
+    magnifierToggle.addEventListener('change', () => {
+      if (magnifierToggle.checked) {
+        updateLensSizeAndContent();
+        lens.style.display = 'block';
+      } else {
+        lens.style.display = 'none';
+      }
+    });
+
+    magnifierZoom.addEventListener('input', () => {
+      if (magnifierToggle.checked) updateLensSizeAndContent();
+    });
+
+    // Scroll-to-zoom toggle and handling
+    const scrollZoomToggle = document.getElementById('scrollZoomToggle');
+  const touchToggle = document.getElementById('touchToggle');
+    function setMapScale(s, centerX = null, centerY = null) {
+      const newScale = Math.max(minMapScale, Math.min(maxMapScale, s));
+      if (newScale === mapScale) return;
+      // If center provided (screen coordinates relative to container), adjust tx/ty so zoom centers on that point
+      if (centerX !== null && centerY !== null) {
+        // formula: tx' = tx + cx*(1/s2 - 1/s)
+        tx = tx + centerX * (1 / newScale - 1 / mapScale);
+        ty = ty + centerY * (1 / newScale - 1 / mapScale);
+        clampTranslation();
+      }
+      mapScale = newScale;
+      applyTransform();
+      // Recalculate lens content sizing so mapping stays correct
+      if (magnifierToggle.checked) updateLensSizeAndContent();
+    }
+
+    mapContainer.addEventListener('wheel', (e) => {
+      if (!scrollZoomToggle.checked) return;
+      // Zoom the map with wheel, centering on mouse position
+      e.preventDefault();
+      const rect = mapContainer.getBoundingClientRect();
+      const cx = e.clientX - rect.left;
+      const cy = e.clientY - rect.top;
+      const delta = e.deltaY;
+      const step = 0.08;
+      const target = delta > 0 ? mapScale - step : mapScale + step;
+      setMapScale(target, cx, cy);
+    }, { passive: false });
+
+    mapContainer.addEventListener('mousemove', onMouseMove);
+
+    // Touch handlers (pan + pinch-to-zoom)
+    let lastTouchDistance = null;
+    let lastTouchCenter = null;
+    let touchPanning = false;
+
+    function getTouchDistance(t1, t2) {
+      const dx = t2.clientX - t1.clientX;
+      const dy = t2.clientY - t1.clientY;
+      return Math.hypot(dx, dy);
+    }
+
+    function getTouchCenter(t1, t2) {
+      return { x: (t1.clientX + t2.clientX) / 2, y: (t1.clientY + t2.clientY) / 2 };
+    }
+
+    mapContainer.addEventListener('touchstart', (e) => {
+      if (!touchToggle.checked) return;
+      if (e.touches.length === 1) {
+        // start panning
+        touchPanning = true;
+        lastMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      } else if (e.touches.length === 2) {
+        lastTouchDistance = getTouchDistance(e.touches[0], e.touches[1]);
+        lastTouchCenter = getTouchCenter(e.touches[0], e.touches[1]);
+      }
+    }, { passive: false });
+
+    mapContainer.addEventListener('touchmove', (e) => {
+      if (!touchToggle.checked) return;
+      e.preventDefault();
+      if (e.touches.length === 1 && touchPanning) {
+        const t = e.touches[0];
+        // emulate mouse drag deltas
+        const dx = t.clientX - lastMouse.x;
+        const dy = t.clientY - lastMouse.y;
+        tx += dx / mapScale;
+        ty += dy / mapScale;
+        clampTranslation();
+        applyTransform();
+        lastMouse = { x: t.clientX, y: t.clientY };
+      } else if (e.touches.length === 2) {
+        const curDist = getTouchDistance(e.touches[0], e.touches[1]);
+        const curCenter = getTouchCenter(e.touches[0], e.touches[1]);
+        if (lastTouchDistance != null) {
+          const scaleFactor = curDist / lastTouchDistance;
+          const targetScale = mapScale * scaleFactor;
+          // compute center relative to container
+          const rect = mapContainer.getBoundingClientRect();
+          const cx = curCenter.x - rect.left;
+          const cy = curCenter.y - rect.top;
+          setMapScale(targetScale, cx, cy);
+        }
+        lastTouchDistance = curDist;
+        lastTouchCenter = curCenter;
+      }
+    }, { passive: false });
+
+    mapContainer.addEventListener('touchend', (e) => {
+      if (!touchToggle.checked) return;
+      if (e.touches.length === 0) {
+        touchPanning = false;
+        lastTouchDistance = null;
+        lastTouchCenter = null;
+      }
+    });
+
+    // Drag-to-pan handlers
+    mapContainer.addEventListener('mousedown', (e) => {
+      // only left button
+      if (e.button !== 0) return;
+      // only allow dragging when zoomed in
+      if (mapScale <= 1) return;
+      isDragging = true;
+      lastMouse = { x: e.clientX, y: e.clientY };
+      mapContainer.style.cursor = 'grabbing';
+      // while dragging, listen on the window so dragging continues when cursor leaves the container
+      window.addEventListener('mousemove', onMouseMove);
+    });
+    window.addEventListener('mouseup', () => {
+      if (isDragging) {
+        isDragging = false;
+        mapContainer.style.cursor = '';
+        // stop listening globally
+        window.removeEventListener('mousemove', onMouseMove);
+      }
+    });
+    // prevent selecting when dragging
+    mapContainer.addEventListener('dragstart', (e) => e.preventDefault());
+
+    // Reset button behavior
+    const resetButton = document.getElementById('resetButton');
+    function resetAll() {
+      // Reset sliders and image opacities
+      sliders.forEach(({ slider, img }) => {
+        slider.value = 25;
+        img.style.opacity = 25 / 100;
+        const clone = lensImgs[img.id];
+        if (clone) clone.style.opacity = img.style.opacity;
+      });
+      // Reset magnifier and zoom
+      magnifierToggle.checked = false;
+      lens.style.display = 'none';
+      magnifierZoom.value = 2;
+      // Reset scroll zoom and transform
+      scrollZoomToggle.checked = false;
+      tx = 0; ty = 0; mapScale = 1;
+      applyTransform();
+      updateLensSizeAndContent();
+      mapContainer.style.cursor = '';
+    }
+    resetButton.addEventListener('click', resetAll);
+    mapContainer.addEventListener('mouseleave', () => {
+      // don't hide lens while dragging (so user can continue panning)
+      if (!isDragging) lens.style.display = 'none';
+    });
+    mapContainer.addEventListener('mouseenter', () => {
+      if (magnifierToggle.checked) lens.style.display = 'block';
     });
   </script>
 </body>
