@@ -17,6 +17,7 @@
         <img id="interactive" src="interactive.png" alt="Mapa 2" style="opacity: 0.5;">
         <img id="standard" src="standard.png" alt="Mapa 3" style="opacity: 0.5;">
         <img id="worldbuilders" src="worldbuilders.png" alt="Mapa 4" style="opacity: 0.5;">
+        <img id="aturan" src="aturan.png" alt="Aturan Map" style="opacity: 0;">
       </div>
     </div>
 
@@ -34,6 +35,9 @@
 
         <label for="slider4">Worldbuilders:</label>
         <input type="range" min="0" max="95" value="25" id="slider4">
+
+        <label for="slider5">Aturan:</label>
+        <input type="range" min="0" max="95" value="0" id="slider5">
       </div>
       <div class="controls" style="margin-top:8px;">
         <label for="scrollZoomToggle">Scroll zoom:</label>
@@ -55,13 +59,13 @@
       
       <div class="text-box">
         <h3>Map Information</h3>
-        <p>Use the sliders above to adjust the opacity of each map layer. This lets you compare the different versions and see how they overlap.</p>
-        <p>These are the four main versions of the map:<br>
+        <p>These are the four main versions of the map, plus the Aturan Empire:<br>
           <strong>Interactive:</strong> from Pat's official <a href="https://www.patrickrothfuss.com/content/world.html" target="_blank" style="color:#1c1812;">website</a> and the first editions of <em>NotW</em>.<br>
           <strong>Standard:</strong> the most common version included in the books.<br>
           <strong>Anniversary:</strong> from the 10th-anniversary special edition. Credit to illustrator<a href="https://natentaylor.com/" target="_blank" style="color:#1c1812;"> Nate Taylor</a><br>
-          <strong>Worldbuilders:</strong> from the poster sold by Worldbuilders.<br>
-          You can buy it <a href="https://worldbuildersmarket.com/products/anniversary-edition-four-corners-of-civilization-map" target="_blank" style="color:#1c1812;">here</a>.
+          <strong>Worldbuilders:</strong> from the poster sold by <a href="https://worldbuildersmarket.com/products/anniversary-edition-four-corners-of-civilization-map" target="_blank" style="color:#1c1812;">Worldbuilders</a>.<br>
+          <strong>Aturan:</strong> from the 10th-anniversary special edition.<br>
+        
         </p>
       </div>
     </div>
@@ -72,7 +76,8 @@
       { slider: document.getElementById("slider1"), img: document.getElementById("interactive") },
       { slider: document.getElementById("slider2"), img: document.getElementById("standard") },
       { slider: document.getElementById("slider3"), img: document.getElementById("anniversary") },
-      { slider: document.getElementById("slider4"), img: document.getElementById("worldbuilders") }
+      { slider: document.getElementById("slider4"), img: document.getElementById("worldbuilders") },
+      { slider: document.getElementById("slider5"), img: document.getElementById("aturan") }
     ];
 
     sliders.forEach(({ slider, img }) => {
@@ -96,7 +101,7 @@
     mapContainer.appendChild(lens);
 
   // Clone images into the lens so the composite is visible
-    const imgIds = ['interactive','standard','anniversary','worldbuilders'];
+  const imgIds = ['interactive','standard','anniversary','worldbuilders','aturan'];
     const lensImgs = {};
     imgIds.forEach(id => {
       const srcImg = document.getElementById(id);
@@ -106,6 +111,11 @@
       clone.style.opacity = srcImg.style.opacity || window.getComputedStyle(srcImg).opacity;
       lensContent.appendChild(clone);
       lensImgs[id] = clone;
+      // if there's a slider for this id, sync its value with the image's opacity
+      const s = document.querySelector(`#slider5`) ;
+      if (id === 'aturan' && s) {
+        s.value = parseFloat(clone.style.opacity) * 100;
+      }
     });
 
     // Keep opacities in sync
@@ -115,6 +125,17 @@
         if (clone) clone.style.opacity = img.style.opacity;
       });
     });
+
+    // Defensive: ensure aturan slider explicitly updates the aturan image and its clone
+    const aturanSlider = document.getElementById('slider5');
+    const aturanImg = document.getElementById('aturan');
+    if (aturanSlider && aturanImg) {
+      aturanSlider.addEventListener('input', () => {
+        aturanImg.style.opacity = aturanSlider.value / 100;
+        const clone = lensImgs['aturan'];
+        if (clone) clone.style.opacity = aturanImg.style.opacity;
+      });
+    }
 
     // Default lens hidden
     lens.style.display = 'none';
